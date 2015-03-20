@@ -225,5 +225,10 @@ void get_current_osx_version(unsigned *major, unsigned *minor, unsigned *patch) 
 #endif
 }
 
+QString mainBundlePath() {
+    NSURL *url = [[NSBundle mainBundle] bundleURL];
+    return [[url path] UTF8String];
+}
+
 } // namespace mac
 } // namespace utils

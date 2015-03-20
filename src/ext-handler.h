@@ -34,10 +34,6 @@ private slots:
 
 private:
     ExtConnectionListenerThread *listener_thread_;
-
-    Account findAccountByRepo(const QString& repo_id);
-
-    QHash<QString, Account> accounts_cache_;
 };
 
 /**
