@@ -44,6 +44,7 @@ class FinderSyncClient {
     ~FinderSyncClient();
     void getWatchSet();
     void doSharedLink(const char *fileName);
+    void doOpenBrowser(const char *fileName);
 
   private:
     bool connect();

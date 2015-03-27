@@ -36,6 +36,7 @@ static constexpr uint32_t kFinderSyncProtocolVersion = 1;
 enum CommandType : uint32_t {
     GetWatchSet = 0,
     DoShareLink = 1,
+    DoOpenBrowser = 2,
 };
 
 struct mach_msg_command_send_t {
@@ -201,6 +202,36 @@ void FinderSyncClient::doSharedLink(const char *fileName) {
     kern_return_t kr = mach_msg_send(&msg.header);
     if (kr != MACH_MSG_SUCCESS) {
         NSLog(@"failed to send sharing link request for %s", fileName);
+        NSLog(@"mach error %s", mach_error_string(kr));
+        if (kr == MACH_SEND_INVALID_DEST)
+            connectionBecomeInvalid();
+        return;
+    }
+}
+
+void FinderSyncClient::doOpenBrowser(const char *fileName) {
+    if ([NSThread isMainThread]) {
+        NSLog(@"%s isn't supported to be called from main thread",
+              __PRETTY_FUNCTION__);
+        return;
+    }
+    std::lock_guard<std::mutex> lock(mach_msg_mutex_);
+    if (!connect())
+        return;
+    mach_msg_command_send_t msg;
+    bzero(&msg, sizeof(msg));
+    msg.header.msgh_id = 1;
+    msg.header.msgh_local_port = MACH_PORT_NULL;
+    msg.header.msgh_remote_port = remote_port_;
+    msg.header.msgh_size = sizeof(msg);
+    msg.header.msgh_bits = MACH_MSGH_BITS_REMOTE(MACH_MSG_TYPE_COPY_SEND);
+    strncpy(msg.body, fileName, kPathMaxSize);
+    msg.version = kFinderSyncProtocolVersion;
+    msg.command = DoOpenBrowser;
+    // send a message only
+    kern_return_t kr = mach_msg_send(&msg.header);
+    if (kr != MACH_MSG_SUCCESS) {
+        NSLog(@"failed to send open browser request for %s", fileName);
         NSLog(@"mach error %s", mach_error_string(kr));
         if (kr == MACH_SEND_INVALID_DEST)
             connectionBecomeInvalid();
