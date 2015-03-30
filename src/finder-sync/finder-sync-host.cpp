@@ -14,8 +14,6 @@
 #include "seafile-applet.h"
 #include "rpc/local-repo.h"
 #include "rpc/rpc-client.h"
-#include "api/requests.h"
-#include "filebrowser/file-browser-manager.h"
 #include "filebrowser/file-browser-requests.h"
 #include "filebrowser/sharedlink-dialog.h"
 
@@ -23,7 +21,6 @@ static std::mutex watch_set_mutex_;
 static std::vector<LocalRepo> watch_set_;
 static std::unique_ptr<GetSharedLinkRequest> get_shared_link_req_;
 static constexpr int kUpdateWatchSetInterval = 5000;
-static std::unique_ptr<GetRepoRequest> open_browser_get_repo_req_;
 
 FinderSyncHost::FinderSyncHost()
   : timer_(new QTimer(this))
@@ -35,7 +32,6 @@ FinderSyncHost::FinderSyncHost()
 
 FinderSyncHost::~FinderSyncHost() {
     get_shared_link_req_.reset();
-    open_browser_get_repo_req_.reset();
     timer_->stop();
 }
 
@@ -88,13 +84,13 @@ void FinderSyncHost::doShareLink(const QString &path) {
 
     if (repo_id.isEmpty() || path_in_repo.isEmpty() ||
         path_in_repo.startsWith(".")) {
-        qWarning("[FinderSync] invalid path %s", path.toUtf8().data());
+        qWarning("invalid path %s", path.toUtf8().data());
         return;
     }
 
     const Account account = seafApplet->accountManager()->getAccountByRepo(repo_id);
     if (!account.isValid()) {
-        qWarning("[FinderSync] invalid repo_id %s", repo_id.toUtf8().data());
+        qWarning("invalid repo_id %s", repo_id.toUtf8().data());
         return;
     }
 
@@ -109,29 +105,6 @@ void FinderSyncHost::doShareLink(const QString &path) {
 
 }
 
-void FinderSyncHost::doOpenBrowser(const QString &path)
-{
-    QString repo_id;
-    {
-        std::lock_guard<std::mutex> watch_set_lock(watch_set_mutex_);
-        for (const LocalRepo &repo : watch_set_)
-            if(path.startsWith(repo.worktree)) {
-                repo_id = repo.id;
-                break;
-            }
-    }
-
-    const Account account = seafApplet->accountManager()->getAccountByRepo(repo_id);
-    if (!account.isValid()) {
-        qWarning("[FinderSync] invalid repo_id %s", repo_id.toUtf8().data());
-        return;
-    }
-    open_browser_get_repo_req_.reset(new GetRepoRequest(account, repo_id));
-    connect(open_browser_get_repo_req_.get(), SIGNAL(success(const ServerRepo&)),
-            this, SLOT(onOpenBrowser(const ServerRepo&)));
-    open_browser_get_repo_req_->send();
-}
-
 void FinderSyncHost::onShareLinkGenerated(const QString& link)
 {
     SharedLinkDialog *dialog = new SharedLinkDialog(link, NULL);
@@ -139,14 +112,4 @@ void FinderSyncHost::onShareLinkGenerated(const QString& link)
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
-}
-
-void FinderSyncHost::onOpenBrowser(const ServerRepo& repo)
-{
-    const Account account = seafApplet->accountManager()->getAccountByRepo(repo.id);
-    if (!account.isValid()) {
-        qWarning("[FinderSync] invalid repo_id %s", repo.id.toUtf8().data());
-        return;
-    }
-    FileBrowserManager::getInstance()->openOrActivateDialog(account, repo);
 }

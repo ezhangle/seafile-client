@@ -241,14 +241,8 @@ findRepoContainPath(const std::vector<LocalRepo> &repos,
         [menu addItemWithTitle:@"Get Seafile Share Link"
                         action:@selector(shareLinkAction:)
                  keyEquivalent:@""];
-    NSMenuItem *openBrowserItem =
-        [menu addItemWithTitle:@"Open In Seafile Cloud Browser"
-                        action:@selector(openBrowserAction:)
-                 keyEquivalent:@""];
-
     NSImage *seafileImage = [NSImage imageNamed:@"seafile.icns"];
     [shareLinkItem setImage:seafileImage];
-    [openBrowserItem setImage:seafileImage];
 
     return menu;
 }
@@ -266,22 +260,6 @@ findRepoContainPath(const std::vector<LocalRepo> &repos,
     dispatch_async(
         dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
           client_->doSharedLink(fileName.c_str());
-        });
-}
-
-- (IBAction)openBrowserAction:(id)sender {
-    NSArray *items =
-        [[FIFinderSyncController defaultController] selectedItemURLs];
-    if (![items count])
-        return;
-    NSURL *item = items.firstObject;
-
-    std::string fileName = [item fileSystemRepresentation];
-
-    // do it in another thread
-    dispatch_async(
-        dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
-          client_->doOpenBrowser(fileName.c_str());
         });
 }
 

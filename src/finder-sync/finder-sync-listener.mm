@@ -24,7 +24,6 @@
 enum CommandType : uint32_t {
     GetWatchSet = 0,
     DoShareLink = 1,
-    DoOpenBrowser = 2,
 };
 
 struct mach_msg_command_send_t {
@@ -147,13 +146,6 @@ static constexpr uint32_t kFinderSyncProtocolVersion = 1;
     case DoShareLink:
         // handle DoShareLink
         QMetaObject::invokeMethod(finder_sync_host_.get(), "doShareLink",
-                                  Qt::QueuedConnection,
-                                  Q_ARG(QString, msg->body));
-        mach_msg_destroy(&msg->header);
-        return;
-    case DoOpenBrowser:
-        // handle DoOpenBrowser
-        QMetaObject::invokeMethod(finder_sync_host_.get(), "doOpenBrowser",
                                   Qt::QueuedConnection,
                                   Q_ARG(QString, msg->body));
         mach_msg_destroy(&msg->header);

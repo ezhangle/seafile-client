@@ -13,22 +13,17 @@ struct watch_dir_t {
 };
 
 class QTimer;
-class ServerRepo;
 class FinderSyncHost : public QObject {
     Q_OBJECT
 public:
     FinderSyncHost();
     ~FinderSyncHost();
-
     // called from another thread
     size_t getWatchSet(watch_dir_t *front, size_t max_size);
 private slots:
     void updateWatchSet();
     void doShareLink(const QString &path);
-    void doOpenBrowser(const QString &path);
-
     void onShareLinkGenerated(const QString& link);
-    void onOpenBrowser(const ServerRepo& repo);
 private:
     QTimer *timer_;
 };
